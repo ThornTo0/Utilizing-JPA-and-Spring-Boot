@@ -6,6 +6,7 @@ import jpabook.jpashop.domain.OrderItem;
 import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.OrderSimpleQueryDTO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.SpringVersion;
@@ -51,11 +52,30 @@ public class OrderSimpleApiController {
         return null;
     }
 
-    //
+    // 쿼리 1번만 나감 ( N + 1 문제를 튜닝하여 해결 )
+    // 지연 로딩 자체가 일어나지 않음( Lazy or Eager를 걱정할 필요가 없음 )
+    // 단점 : SQL로 Entity로 찍어서 다 가져왔다는 단점이 있긴 있음
     @GetMapping("/api/v3/simple-orders")
-    public List<Order> orderV3(){
-        return orderRepository.findAllWithMemberDelivery();
+    public List<SimpleOrderDTO> orderV3(){
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        // DTO로 변환
+        List<SimpleOrderDTO> result = orders.stream()
+                .map(o -> new SimpleOrderDTO(o))
+                .collect(Collectors.toList());
+        return result;
     }
+
+    // DTO로 데이터를 가져오는 방법을 사용
+    // 결과 : Select 절에서 내가 원하는 정보만을 select하는 이점이 존재함!
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDTO> orderV4(){
+        return orderRepository.findOrderDTOs();
+    }
+
+    // 결론 : V3과 V4는 trade-off 관계 ( 상황 봐가면서 사용 )
+    //  V3 장점/단점 : 코드를 재사용할 수 있음(코드가 깔끔), 네트워크를 많이 사용함
+    //  V4 장점/단점 : 네트워크를 덜 사용함, 코드를 재사용하기 힘듦( 코드가 지저분 함 )
+    //  화면에 종속적인 쿼리는 따로 분리해서 사용하면, V4를 사용하는 것이 유지보수 상에서는 좋을 수 있음
 
     @Data
     static class SimpleOrderDTO{
