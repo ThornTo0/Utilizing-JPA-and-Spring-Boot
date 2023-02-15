@@ -23,5 +23,16 @@ public class OrderRepository {
         return em.find(Order.class, id);
     }
 
+    public List<Order> findAllWithMemberDelivery() {
+        return em.createQuery(
+                        "select o from Order o" +
+                                " join fetch o.member limit" +
+                                " join fetch o.delivery d", Order.class)
+                .getResultList();
+    }
+
+//    public List<Order> findAllByString(OrderSearch orderSearch) {
+//    }
+
 //    public List<Order> findAll(OrderSearch orderSearch){}
 }
